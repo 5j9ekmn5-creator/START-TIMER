@@ -40,7 +40,7 @@
         .timer-case {
             background: linear-gradient(165deg, #1d202d, #10121a);
             border: 1px solid #2e3344;
-            padding: 26px 20px;
+            padding: 28px 22px;
             border-radius: 36px;
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.12);
             width: 100%;
@@ -52,7 +52,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             padding: 0 6px;
         }
 
@@ -82,11 +82,12 @@
             border-color: rgba(0, 255, 102, 0.3);
         }
 
+        /* 1段目：大画面 LCD Display Area */
         .lcd-display {
             background-color: #040507;
             border: 2px solid #252936;
             border-radius: 24px;
-            padding: 24px 12px 18px 12px;
+            padding: 28px 12px 20px 12px;
             box-shadow: inset 0 6px 16px rgba(0,0,0,0.85);
             margin-bottom: 24px;
         }
@@ -101,7 +102,7 @@
         }
 
         .time-text {
-            font-size: 64px;
+            font-size: 68px;
             font-weight: 800;
             color: var(--accent-green);
             font-variant-numeric: tabular-nums;
@@ -120,24 +121,28 @@
             white-space: nowrap;
         }
 
+        /* 入力セクション共通スタイル */
         .input-section {
             background: #171924;
             border: 1px solid #2f3448;
             border-radius: 22px;
-            padding: 14px 16px;
-            margin-bottom: 18px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
         }
 
-        .section-icon { font-size: 30px; line-height: 1; }
+        .section-icon {
+            font-size: 32px;
+            line-height: 1;
+        }
 
         .input-section input[type="time"] {
             background: #06070a;
             color: #ffffff;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 800;
             padding: 8px 10px;
             border-radius: 14px;
@@ -148,418 +153,26 @@
             width: 100%;
         }
 
-        .target-box input[type="time"] { border: 2px solid var(--accent-orange); }
-        .timer-box input[type="time"] { border: 2px solid var(--accent-purple); }
+        /* 2段目：時刻セット */
+        .target-box input[type="time"] {
+            border: 2px solid var(--accent-orange);
+        }
 
+        /* 3段目：タイマーセット */
+        .timer-box input[type="time"] {
+            border: 2px solid var(--accent-purple);
+        }
+
+        /* 同一サイズの独立スタートボタン */
         .btn-action-start {
             color: white;
             border: none;
-            padding: 14px 18px;
-            font-size: 15px;
+            padding: 16px 18px;
+            font-size: 16px;
             font-weight: 800;
             border-radius: 16px;
             cursor: pointer;
             white-space: nowrap;
-            min-width: 130px;
+            min-width: 135px;
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
         }
-
-        .btn-target-start { background: linear-gradient(135deg, #ff9500, #c67100); }
-        .btn-timer-start { background: linear-gradient(135deg, #af52de, #7b2cbf); }
-        .btn-action-start:active { transform: scale(0.95); }
-
-        .adjust-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .adjust-btn {
-            background: #252a3b;
-            color: var(--text-main);
-            border: 1px solid #3a415a;
-            padding: 14px 0;
-            font-size: 14px;
-            font-weight: 700;
-            border-radius: 14px;
-            cursor: pointer;
-        }
-
-        .adjust-btn:active { background: #3c435e; transform: scale(0.96); }
-
-        .btn-grid-main {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-bottom: 20px;
-        }
-
-        .btn-control {
-            appearance: none;
-            border: none;
-            outline: none;
-            padding: 18px 0;
-            font-size: 17px;
-            font-weight: 800;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.4);
-        }
-
-        .btn-control:active { transform: scale(0.96); }
-
-        .btn-stop { background: linear-gradient(135deg, #ff453a, #c62828); color: white; }
-        .btn-reset { background: #2c2c2e; color: var(--text-main); border: 1px solid #3a3a3c; }
-
-        .safeguard-note {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 12px 14px;
-            font-size: 11px;
-            color: var(--text-sub);
-            text-align: left;
-            line-height: 1.4;
-        }
-
-        audio { display: none; }
-    </style>
-</head>
-<body>
-
-<div class="timer-case">
-    <div class="brand-header">
-        <div class="brand-title">GOOD <span>TIMER</span></div>
-        <div class="badge-bt" id="btBadge">● BT / SLP READY</div>
-    </div>
-
-    <div class="lcd-display">
-        <div class="lcd-status-bar">
-            <span id="modeStatus">READY</span>
-            <span id="bgStatus">AUDIO: OFF</span>
-        </div>
-        <div class="time-text" id="display">00:00:00</div>
-        <div class="sub-status" id="statusText">時刻設定またはタイマー時間入力</div>
-    </div>
-
-    <div class="input-section target-box">
-        <span class="section-icon">🕰️</span>
-        <form style="display:inline; flex-grow:1;" action="javascript:void(0);">
-            <input type="time" id="targetTimeInput">
-        </form>
-        <button class="btn-action-start btn-target-start" onclick="startByTargetTime()">時刻スタート</button>
-    </div>
-
-    <div class="input-section timer-box">
-        <span class="section-icon">⏱️</span>
-        <form style="display:inline; flex-grow:1;" action="javascript:void(0);">
-            <input type="time" id="timerDurationInput" value="00:05">
-        </form>
-        <button class="btn-action-start btn-timer-start" onclick="startByDuration()">タイマースタート</button>
-    </div>
-
-    <div class="adjust-grid">
-        <button class="adjust-btn" onclick="addTime(60)">+1分</button>
-        <button class="adjust-btn" onclick="addTime(10)">+10秒</button>
-        <button class="adjust-btn" onclick="addTime(1)">+1秒</button>
-    </div>
-
-    <div class="btn-grid-main">
-        <button class="btn-control btn-stop" onclick="handleStop()">ストップ</button>
-        <button class="btn-control btn-reset" onclick="handleReset()">リセット</button>
-    </div>
-
-    <div class="safeguard-note">
-        <strong>⛵ ヨットレース/Bluetooth対策済</strong><br>
-        Bluetooth接続・画面消灯時もバックグラウンドオーディオセッションを常時維持。秒針音とアナウンスが確実に届きます。
-    </div>
-</div>
-
-<!-- セッション維持用のオーディオタグ -->
-<audio id="bgAudioKeepAlive" loop playsinline preload="auto"></audio>
-
-<script>
-// バックグラウンド維持用の音源
-const SILENT_WAV_BASE64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-
-let timeLeft = 0;
-let mainTimerId = null;
-let audioCtx = null;
-let wakeLock = null;
-let lastAnnouncedSecond = -1;
-
-const display = document.getElementById('display');
-const statusText = document.getElementById('statusText');
-const modeStatus = document.getElementById('modeStatus');
-const bgStatus = document.getElementById('bgStatus');
-const btBadge = document.getElementById('btBadge');
-const bgAudioKeepAlive = document.getElementById('bgAudioKeepAlive');
-const targetTimeInput = document.getElementById('targetTimeInput');
-const timerDurationInput = document.getElementById('timerDurationInput');
-
-bgAudioKeepAlive.src = SILENT_WAV_BASE64;
-
-function unlockAudioEngine() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-
-    if ('mediaSession' in navigator) {
-        try {
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: "Good Timer Sailing Engine",
-                artist: "Sailing Race Timer",
-                album: "Bluetooth Background KeepAlive"
-            });
-            navigator.mediaSession.setActionHandler('play', () => runTimerLoop());
-            navigator.mediaSession.setActionHandler('pause', () => handleStop());
-        } catch(e) {}
-    }
-
-    bgAudioKeepAlive.play().then(() => {
-        bgStatus.textContent = "AUDIO: ACTIVE";
-        btBadge.classList.add('active');
-    }).catch(e => console.log("Audio play deferred", e));
-}
-
-async function requestWakeLock() {
-    try {
-        if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
-    } catch (err) {}
-}
-
-function releaseWakeLock() {
-    if (wakeLock) { wakeLock.release(); wakeLock = null; }
-}
-
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        if (mainTimerId && modeStatus.textContent === "RUNNING") requestWakeLock();
-    }
-});
-
-// 秒針音（バランスを考慮したゲイン設定）
-function playTick() {
-    unlockAudioEngine();
-    if (!audioCtx) return;
-
-    try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
-
-        gain.gain.setValueAtTime(0.8, audioCtx.currentTime); // 適正レベルに調整
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.08);
-    } catch(e) {}
-}
-
-function speak(text) {
-    if (!('speechSynthesis' in window)) return;
-    unlockAudioEngine();
-
-    try {
-        window.speechSynthesis.cancel();
-        const uttr = new SpeechSynthesisUtterance(text);
-        uttr.lang = 'ja-JP';
-        uttr.rate = 1.3;
-        uttr.pitch = 1.0;
-        uttr.volume = 1.0;
-        window.speechSynthesis.speak(uttr);
-    } catch(e) {}
-}
-
-function announceCountdown(seconds) {
-    if (seconds < 0 || seconds === lastAnnouncedSecond) return;
-
-    let textToSpeak = null;
-
-    if (seconds === 0) {
-        textToSpeak = "時間です";
-    }
-    else if (seconds < 30) {
-        textToSpeak = `${seconds}`;
-    }
-    else if (seconds >= 30 && seconds <= 90) {
-        if (seconds % 10 === 0) {
-            const m = Math.floor(seconds / 60);
-            const s = seconds % 60;
-            textToSpeak = (m > 0 && s > 0) ? `残り${m}分${s}秒` : (m > 0 ? `残り${m}分` : `残り${s}秒`);
-        }
-    }
-    else if (seconds > 90 && seconds <= 600) {
-        if (seconds % 30 === 0) {
-            const m = Math.floor(seconds / 60);
-            const s = seconds % 60;
-            textToSpeak = (s === 0) ? `残り${m}分` : `残り${m}分30秒`;
-        }
-    }
-    else if (seconds > 600 && seconds <= 1800) {
-        if (seconds % 600 === 0) {
-            textToSpeak = `残り${seconds / 60}分`;
-        }
-    }
-    else if (seconds > 1800 && seconds <= 36000) {
-        if (seconds % 1800 === 0) {
-            const hrs = Math.floor(seconds / 3600);
-            const mins = (seconds % 3600) / 60;
-            textToSpeak = (hrs > 0 && mins > 0) ? `残り${hrs}時間${mins}分` : (hrs > 0 ? `残り${hrs}時間` : `残り${mins}分`);
-        }
-    }
-
-    if (textToSpeak) {
-        lastAnnouncedSecond = seconds;
-        speak(textToSpeak);
-    }
-}
-
-function updateDisplay() {
-    const hrs = Math.floor(timeLeft / 3600).toString().padStart(2, '0');
-    const mins = Math.floor((timeLeft % 3600) / 60).toString().padStart(2, '0');
-    const secs = (timeLeft % 60).toString().padStart(2, '0');
-    display.textContent = `${hrs}:${mins}:${secs}`;
-}
-
-function startByTargetTime() {
-    unlockAudioEngine();
-    targetTimeInput.blur();
-    
-    const val = targetTimeInput.value;
-    if (!val) {
-        statusText.textContent = "時刻を選択してください";
-        return;
-    }
-
-    const now = new Date();
-    const parts = val.split(":");
-    const target = new Date();
-    target.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
-
-    if (target <= now) {
-        target.setDate(target.getDate() + 1);
-    }
-
-    const diffSec = Math.floor((target - now) / 1000);
-    
-    handleStop();
-    timeLeft = diffSec;
-    lastAnnouncedSecond = -1;
-    updateDisplay();
-    statusText.textContent = `${val} スタート目標で動作中`;
-    
-    runTimerLoop();
-}
-
-function startByDuration() {
-    unlockAudioEngine();
-    timerDurationInput.blur();
-
-    const val = timerDurationInput.value;
-    if (!val) {
-        statusText.textContent = "時間を設定してください";
-        return;
-    }
-
-    const parts = val.split(":");
-    const mins = parseInt(parts[0], 10) || 0;
-    const secs = parseInt(parts[1], 10) || 0;
-    const totalSec = (mins * 60) + secs;
-
-    if (totalSec <= 0) {
-        statusText.textContent = "1秒以上を設定してください";
-        return;
-    }
-
-    handleStop();
-    timeLeft = totalSec;
-    lastAnnouncedSecond = -1;
-    updateDisplay();
-    statusText.textContent = `${mins}分${secs}秒 タイマー作動中`;
-
-    runTimerLoop();
-}
-
-function addTime(seconds) {
-    unlockAudioEngine();
-    if (mainTimerId) handleStop();
-    timeLeft += seconds;
-    if (timeLeft > 359999) timeLeft = 359999;
-    lastAnnouncedSecond = -1;
-    updateDisplay();
-    statusText.textContent = `時間を追加しました`;
-    runTimerLoop();
-}
-
-function onTimerTick() {
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-
-    timeLeft--;
-    updateDisplay();
-    playTick();
-
-    announceCountdown(timeLeft);
-
-    if (timeLeft <= 0) {
-        handleStop();
-        modeStatus.textContent = "FINISHED";
-        statusText.textContent = "スタート（時間です）！";
-    }
-}
-
-function runTimerLoop() {
-    unlockAudioEngine();
-    requestWakeLock();
-
-    if (modeStatus.textContent === "RUNNING") return;
-    if (timeLeft <= 0) return;
-
-    if (mainTimerId) clearInterval(mainTimerId);
-    
-    playTick();
-    mainTimerId = setInterval(onTimerTick, 1000);
-
-    modeStatus.textContent = "RUNNING";
-}
-
-function handleStop() {
-    if (mainTimerId) {
-        clearInterval(mainTimerId);
-        mainTimerId = null;
-    }
-    releaseWakeLock();
-    if (modeStatus.textContent === "RUNNING") {
-        modeStatus.textContent = "PAUSED";
-        statusText.textContent = "一時停止中";
-    }
-}
-
-function handleReset() {
-    handleStop();
-    timeLeft = 0;
-    lastAnnouncedSecond = -1;
-    updateDisplay();
-    modeStatus.textContent = "READY";
-    statusText.textContent = "リセットしました";
-}
-
-document.addEventListener('touchstart', unlockAudioEngine, { passive: true });
-document.addEventListener('click', unlockAudioEngine, { passive: true });
-</script>
-</body>
-</html>
