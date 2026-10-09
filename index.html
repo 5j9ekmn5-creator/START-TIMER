@@ -176,3 +176,387 @@
             min-width: 135px;
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
         }
+
+        .btn-target-start {
+            background: linear-gradient(135deg, #ff9500, #c67100);
+        }
+
+        .btn-timer-start {
+            background: linear-gradient(135deg, #af52de, #7b2cbf);
+        }
+
+        .btn-action-start:active { transform: scale(0.95); }
+
+        /* メイン制御（ストップ/リセット） */
+        .btn-grid-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-control {
+            appearance: none;
+            border: none;
+            outline: none;
+            padding: 20px 0;
+            font-size: 18px;
+            font-weight: 800;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+        }
+
+        .btn-control:active { transform: scale(0.96); }
+
+        .btn-stop { background: linear-gradient(135deg, #ff453a, #c62828); color: white; }
+        .btn-reset { background: #2c2c2e; color: var(--text-main); border: 1px solid #3a3a3c; }
+
+        .safeguard-note {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 12px 14px;
+            font-size: 11px;
+            color: var(--text-sub);
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        audio { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="timer-case">
+    <!-- Header -->
+    <div class="brand-header">
+        <div class="brand-title">GOOD <span>TIMER</span></div>
+        <div class="badge-bt" id="btBadge">● BT / SLP READY</div>
+    </div>
+
+    <!-- 1段目：大画面 LCD Display -->
+    <div class="lcd-display">
+        <div class="lcd-status-bar">
+            <span id="modeStatus">READY</span>
+            <span id="bgStatus">AUDIO: OFF</span>
+        </div>
+        <div class="time-text" id="display">00:00:00</div>
+        <div class="sub-status" id="statusText">時刻設定またはタイマー時間入力</div>
+    </div>
+
+    <!-- 2段目：目標スタート時刻（時刻指定） -->
+    <div class="input-section target-box">
+        <span class="section-icon">🕰️</span>
+        <form style="display:inline; flex-grow:1;" action="javascript:void(0);">
+            <input type="time" id="targetTimeInput">
+        </form>
+        <button class="btn-action-start btn-target-start" onclick="startByTargetTime()">時刻スタート</button>
+    </div>
+
+    <!-- 3段目：タイマー時間指定（分・秒指定） -->
+    <div class="input-section timer-box">
+        <span class="section-icon">⏱️</span>
+        <form style="display:inline; flex-grow:1;" action="javascript:void(0);">
+            <input type="time" id="timerDurationInput" value="00:05">
+        </form>
+        <button class="btn-action-start btn-timer-start" onclick="startByDuration()">タイマースタート</button>
+    </div>
+
+    <!-- 4段目：メイン操作（ストップ / リセット） -->
+    <div class="btn-grid-main">
+        <button class="btn-control btn-stop" onclick="handleStop()">ストップ</button>
+        <button class="btn-control btn-reset" onclick="handleReset()">リセット</button>
+    </div>
+
+    <div class="safeguard-note">
+        <strong>⛵ ヨットレース/スリープ完全対応</strong><br>
+        画面消灯・Bluetooth接続時もオーディオセッションを自動維持。カウントダウンおよびスタート音が確実に鳴り響きます。
+    </div>
+</div>
+
+<audio id="bgAudioKeepAlive" loop playsinline preload="auto"></audio>
+
+<script>
+const SILENT_WAV_BASE64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
+let timeLeft = 0;
+let mainTimerId = null;
+let audioCtx = null;
+let wakeLock = null;
+let lastAnnouncedSecond = -1;
+
+const display = document.getElementById('display');
+const statusText = document.getElementById('statusText');
+const modeStatus = document.getElementById('modeStatus');
+const bgStatus = document.getElementById('bgStatus');
+const btBadge = document.getElementById('btBadge');
+const bgAudioKeepAlive = document.getElementById('bgAudioKeepAlive');
+const targetTimeInput = document.getElementById('targetTimeInput');
+const timerDurationInput = document.getElementById('timerDurationInput');
+
+bgAudioKeepAlive.src = SILENT_WAV_BASE64;
+
+// バックグラウンド再生セッションのアンロック
+function unlockAudioEngine() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+
+    if ('mediaSession' in navigator) {
+        try {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: "Good Timer Sailing Engine",
+                artist: "Sailing Race Timer",
+                album: "Background KeepAlive Session"
+            });
+            navigator.mediaSession.setActionHandler('play', () => runTimerLoop());
+            navigator.mediaSession.setActionHandler('pause', () => handleStop());
+        } catch(e) {}
+    }
+
+    bgAudioKeepAlive.play().then(() => {
+        bgStatus.textContent = "AUDIO: ACTIVE";
+        btBadge.classList.add('active');
+    }).catch(e => console.log("Audio play deferred", e));
+}
+
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    } catch (err) {}
+}
+
+function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        if (mainTimerId && modeStatus.textContent === "RUNNING") requestWakeLock();
+    }
+});
+
+// 秒針音（大音量＆屋外用クリアアタック）
+function playTick() {
+    unlockAudioEngine();
+    if (!audioCtx) return;
+
+    try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+
+        gain.gain.setValueAtTime(1.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+    } catch(e) {}
+}
+
+// OSのSpeechSynthesisを使わず、Web Audioで高確度アナウンスシグナルを出力
+function playAudioSignal(freq, duration, count = 1) {
+    unlockAudioEngine();
+    if (!audioCtx) return;
+
+    for (let i = 0; i < count; i++) {
+        const startTime = audioCtx.currentTime + (i * (duration + 0.08));
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(1.5, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+    }
+}
+
+// ルールに基づくカウントダウン発声通知
+function announceCountdown(seconds) {
+    if (seconds < 0 || seconds === lastAnnouncedSecond) return;
+
+    // 0秒ジャスト：スタート（時間です通知）
+    if (seconds === 0) {
+        lastAnnouncedSecond = 0;
+        playAudioSignal(1760, 0.6, 3); // 3連高音アラート（スタートジャスト）
+    }
+    // 残り30秒未満：1秒刻みの明確なシグナル
+    else if (seconds < 30) {
+        lastAnnouncedSecond = seconds;
+        const freq = (seconds <= 5) ? 1200 : 880;
+        playAudioSignal(freq, 0.15, 1);
+    }
+    // 残り30秒〜90秒：10秒ごと
+    else if (seconds >= 30 && seconds <= 90) {
+        if (seconds % 10 === 0) {
+            lastAnnouncedSecond = seconds;
+            playAudioSignal(880, 0.3, 2);
+        }
+    }
+    // 残り90秒〜10分：30秒ごと
+    else if (seconds > 90 && seconds <= 600) {
+        if (seconds % 30 === 0) {
+            lastAnnouncedSecond = seconds;
+            playAudioSignal(880, 0.3, 2);
+        }
+    }
+    // 残り10分〜30分：10分ごと
+    else if (seconds > 600 && seconds <= 1800) {
+        if (seconds % 600 === 0) {
+            lastAnnouncedSecond = seconds;
+            playAudioSignal(880, 0.4, 2);
+        }
+    }
+    // 残り30分以上：30分ごと
+    else if (seconds > 1800 && seconds <= 36000) {
+        if (seconds % 1800 === 0) {
+            lastAnnouncedSecond = seconds;
+            playAudioSignal(880, 0.4, 2);
+        }
+    }
+}
+
+function updateDisplay() {
+    const hrs = Math.floor(timeLeft / 3600).toString().padStart(2, '0');
+    const mins = Math.floor((timeLeft % 3600) / 60).toString().padStart(2, '0');
+    const secs = (timeLeft % 60).toString().padStart(2, '0');
+    display.textContent = `${hrs}:${mins}:${secs}`;
+}
+
+function startByTargetTime() {
+    unlockAudioEngine();
+    targetTimeInput.blur();
+    
+    const val = targetTimeInput.value;
+    if (!val) {
+        statusText.textContent = "時刻を選択してください";
+        return;
+    }
+
+    const now = new Date();
+    const parts = val.split(":");
+    const target = new Date();
+    target.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+
+    if (target <= now) {
+        target.setDate(target.getDate() + 1);
+    }
+
+    const diffSec = Math.floor((target - now) / 1000);
+    
+    handleStop();
+    timeLeft = diffSec;
+    lastAnnouncedSecond = -1;
+    updateDisplay();
+    statusText.textContent = `${val} スタート目標で動作中`;
+    
+    runTimerLoop();
+}
+
+function startByDuration() {
+    unlockAudioEngine();
+    timerDurationInput.blur();
+
+    const val = timerDurationInput.value;
+    if (!val) {
+        statusText.textContent = "時間を設定してください";
+        return;
+    }
+
+    const parts = val.split(":");
+    const mins = parseInt(parts[0], 10) || 0;
+    const secs = parseInt(parts[1], 10) || 0;
+    const totalSec = (mins * 60) + secs;
+
+    if (totalSec <= 0) {
+        statusText.textContent = "1秒以上を設定してください";
+        return;
+    }
+
+    handleStop();
+    timeLeft = totalSec;
+    lastAnnouncedSecond = -1;
+    updateDisplay();
+    statusText.textContent = `${mins}分${secs}秒 タイマー作動中`;
+
+    runTimerLoop();
+}
+
+function onTimerTick() {
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+
+    timeLeft--;
+    updateDisplay();
+    playTick();
+
+    announceCountdown(timeLeft);
+
+    if (timeLeft <= 0) {
+        handleStop();
+        modeStatus.textContent = "FINISHED";
+        statusText.textContent = "スタート（時間です）！";
+    }
+}
+
+function runTimerLoop() {
+    unlockAudioEngine();
+    requestWakeLock();
+
+    if (modeStatus.textContent === "RUNNING") return;
+    if (timeLeft <= 0) return;
+
+    if (mainTimerId) clearInterval(mainTimerId);
+    
+    playTick();
+    mainTimerId = setInterval(onTimerTick, 1000);
+
+    modeStatus.textContent = "RUNNING";
+}
+
+function handleStop() {
+    if (mainTimerId) {
+        clearInterval(mainTimerId);
+        mainTimerId = null;
+    }
+    releaseWakeLock();
+    if (modeStatus.textContent === "RUNNING") {
+        modeStatus.textContent = "PAUSED";
+        statusText.textContent = "一時停止中";
+    }
+}
+
+function handleReset() {
+    handleStop();
+    timeLeft = 0;
+    lastAnnouncedSecond = -1;
+    updateDisplay();
+    modeStatus.textContent = "READY";
+    statusText.textContent = "リセットしました";
+}
+
+document.addEventListener('touchstart', unlockAudioEngine, { passive: true });
+document.addEventListener('click', unlockAudioEngine, { passive: true });
+</script>
+</body>
+</html>
