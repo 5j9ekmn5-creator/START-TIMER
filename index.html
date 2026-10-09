@@ -82,7 +82,6 @@
             border-color: rgba(0, 255, 102, 0.3);
         }
 
-        /* 1段目：大画面 LCD Display Area */
         .lcd-display {
             background-color: #040507;
             border: 2px solid #252936;
@@ -121,7 +120,6 @@
             white-space: nowrap;
         }
 
-        /* 入力セクション共通スタイル */
         .input-section {
             background: #171924;
             border: 1px solid #2f3448;
@@ -153,17 +151,14 @@
             width: 100%;
         }
 
-        /* 2段目：時刻セット */
         .target-box input[type="time"] {
             border: 2px solid var(--accent-orange);
         }
 
-        /* 3段目：タイマーセット */
         .timer-box input[type="time"] {
             border: 2px solid var(--accent-purple);
         }
 
-        /* 同一サイズの独立スタートボタン */
         .btn-action-start {
             color: white;
             border: none;
@@ -187,7 +182,6 @@
 
         .btn-action-start:active { transform: scale(0.95); }
 
-        /* メイン制御（ストップ/リセット） */
         .btn-grid-main {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -231,13 +225,11 @@
 <body>
 
 <div class="timer-case">
-    <!-- Header -->
     <div class="brand-header">
         <div class="brand-title">GOOD <span>TIMER</span></div>
         <div class="badge-bt" id="btBadge">● BT / SLP READY</div>
     </div>
 
-    <!-- 1段目：大画面 LCD Display -->
     <div class="lcd-display">
         <div class="lcd-status-bar">
             <span id="modeStatus">READY</span>
@@ -247,7 +239,6 @@
         <div class="sub-status" id="statusText">時刻設定またはタイマー時間入力</div>
     </div>
 
-    <!-- 2段目：目標スタート時刻（時刻指定） -->
     <div class="input-section target-box">
         <span class="section-icon">🕰️</span>
         <form style="display:inline; flex-grow:1;" action="javascript:void(0);">
@@ -256,7 +247,6 @@
         <button class="btn-action-start btn-target-start" onclick="startByTargetTime()">時刻スタート</button>
     </div>
 
-    <!-- 3段目：タイマー時間指定（分・秒指定） -->
     <div class="input-section timer-box">
         <span class="section-icon">⏱️</span>
         <form style="display:inline; flex-grow:1;" action="javascript:void(0);">
@@ -265,7 +255,6 @@
         <button class="btn-action-start btn-timer-start" onclick="startByDuration()">タイマースタート</button>
     </div>
 
-    <!-- 4段目：メイン操作（ストップ / リセット） -->
     <div class="btn-grid-main">
         <button class="btn-control btn-stop" onclick="handleStop()">ストップ</button>
         <button class="btn-control btn-reset" onclick="handleReset()">リセット</button>
@@ -299,7 +288,6 @@ const timerDurationInput = document.getElementById('timerDurationInput');
 
 bgAudioKeepAlive.src = SILENT_WAV_BASE64;
 
-// バックグラウンド再生セッションのアンロック
 function unlockAudioEngine() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -343,7 +331,6 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-// 秒針音（大音量＆屋外用クリアアタック）
 function playTick() {
     unlockAudioEngine();
     if (!audioCtx) return;
@@ -366,7 +353,6 @@ function playTick() {
     } catch(e) {}
 }
 
-// OSのSpeechSynthesisを使わず、Web Audioで高確度アナウンスシグナルを出力
 function playAudioSignal(freq, duration, count = 1) {
     unlockAudioEngine();
     if (!audioCtx) return;
@@ -390,43 +376,36 @@ function playAudioSignal(freq, duration, count = 1) {
     }
 }
 
-// ルールに基づくカウントダウン発声通知
 function announceCountdown(seconds) {
     if (seconds < 0 || seconds === lastAnnouncedSecond) return;
 
-    // 0秒ジャスト：スタート（時間です通知）
     if (seconds === 0) {
         lastAnnouncedSecond = 0;
-        playAudioSignal(1760, 0.6, 3); // 3連高音アラート（スタートジャスト）
+        playAudioSignal(1760, 0.6, 3);
     }
-    // 残り30秒未満：1秒刻みの明確なシグナル
     else if (seconds < 30) {
         lastAnnouncedSecond = seconds;
         const freq = (seconds <= 5) ? 1200 : 880;
         playAudioSignal(freq, 0.15, 1);
     }
-    // 残り30秒〜90秒：10秒ごと
     else if (seconds >= 30 && seconds <= 90) {
         if (seconds % 10 === 0) {
             lastAnnouncedSecond = seconds;
             playAudioSignal(880, 0.3, 2);
         }
     }
-    // 残り90秒〜10分：30秒ごと
     else if (seconds > 90 && seconds <= 600) {
         if (seconds % 30 === 0) {
             lastAnnouncedSecond = seconds;
             playAudioSignal(880, 0.3, 2);
         }
     }
-    // 残り10分〜30分：10分ごと
     else if (seconds > 600 && seconds <= 1800) {
         if (seconds % 600 === 0) {
             lastAnnouncedSecond = seconds;
             playAudioSignal(880, 0.4, 2);
         }
     }
-    // 残り30分以上：30分ごと
     else if (seconds > 1800 && seconds <= 36000) {
         if (seconds % 1800 === 0) {
             lastAnnouncedSecond = seconds;
